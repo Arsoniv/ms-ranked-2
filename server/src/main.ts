@@ -54,7 +54,7 @@ const pool = new Pool({
     user: 'avnadmin',
     host: 'msrankeddb-msrankeddb.l.aivencloud.com',
     database: 'defaultdb',
-    password: 'AVNS_rf5qRoRjRlSEzKsK_xP',
+    password: process.env.PG_PASSWORD,
     port: 12088,
 });
 
