@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home of MS Ranked</title>
+    <style>
+        .colorMain {
+            background-color: #272727;
+            color: #acacac;
+            font-family: "Candara Light",serif;
+            padding: 0;
+            margin: 0;
+        }
+        .hover {
+            color: #acacac;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .hover:hover {
+            cursor: pointer;
+            color: #a7f592;
+        }
+
+        .hoverB {
+            background-color: #272727;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .hoverB:hover {
+            cursor: pointer;
+            background-color: #496043;
+        }
+    </style>
+</head>
+<body class="colorMain" style="border: solid 3px #acacac; margin: 6px;">
+    <h1 class="colorMain, hover" style="margin: 10px; width: fit-content; font-size: 40px">MineSweeper Ranked</h1>
+    <nav style="position: absolute; top: 9px; right: 9px; display: grid; grid-template-columns: auto auto;">
+        <div style="font-size: 30px; margin: 15px;">
+            <a style="text-decoration: none; font-family: Candara,serif" href="/signup" class="colorMain hover">Sign up</a>
+        </div>
+        <div style="font-size: 30px; margin: 15px;">
+            <a style="text-decoration: none; font-family: Candara,serif;" href="/login" class="colorMain hover">Log in</a>
+        </div>
+    </nav>
+    <hr style="border-color: #2a2a2a">
+
+    <div style="display: grid; grid-template-columns: 77% 20%; margin: 3%; gap: 3%">
+        <div class="colorMain" style="width: 100%; aspect-ratio: 10/3; background-color: #1f1f1f; border-radius: 8px; display: grid; grid-template-columns: 23.85% 23.85% 23.85% 23.85%; gap: 1%">
+            <div class="colorMain hoverB" style="width: 100%; height: 95%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h1 style="font-size: 50px; margin: 5px 0;">Easy</h1>
+                <h3 style="font-size: 20px; margin: 5px 0;">10x10 | 20 mines</h3>
+            </div>
+            <div class="colorMain hoverB" style="width: 100%; height: 95%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h1 style="font-size: 50px; margin: 5px 0;">Medium</h1>
+                <h3 style="font-size: 20px; margin: 5px 0;">15x15 | 50 mines</h3>
+            </div>
+            <div class="colorMain hoverB" style="width: 100%; height: 95%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h1 style="font-size: 50px; margin: 5px 0;">Hard</h1>
+                <h3 style="font-size: 20px; margin: 5px 0;">20x20 | 70 mines</h3>
+            </div>
+            <div class="colorMain hoverB" style="width: 100%; height: 95%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h1 style="font-size: 50px; margin: 5px 0;">Extreme</h1>
+                <h3 style="font-size: 20px; margin: 5px 0;">25x25 | 140 mines</h3>
+            </div>
+        </div>
+        <div class="colorMain" style="width: 100%; height: 100%; background-color: #1f1f1f; border-radius: 8px;"></div>
+    </div>
+
+</body>
+</html>
