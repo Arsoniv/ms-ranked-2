@@ -56,3 +56,6 @@ export function generateBoard(width: number, height: number, mines: number): Boa
         cells: board
     };
 }
+
+
+

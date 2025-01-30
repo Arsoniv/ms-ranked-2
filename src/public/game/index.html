@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MS Ranked</title>
+  <style>
+    .colorMain {
+      background-color: #272727;
+      color: #acacac;
+      font-family: "Candara Light",serif;
+      padding: 0;
+      margin: 0;
+    }
+    .hover {
+      color: #acacac;
+      cursor: pointer;
+      transition: color 0.35s ease;
+    }
+
+    .hover:hover {
+      cursor: pointer;
+      color: #a7f592;
+    }
+
+    .hoverB {
+      background-color: #272727;
+      cursor: pointer;
+      transition: color 0.35s ease;
+    }
+
+    .hoverB:hover {
+      cursor: pointer;
+      background-color: #496043;
+    }
+  </style>
+</head>
+<body class="colorMain" style="border: solid 3px #acacac; margin: 6px; height: 550px">
+<a href="/" style="text-decoration: none;"><h1 class="colorMain, hover" style="text-decoration: none; margin: 10px; width: fit-content; font-size: 40px">MineSweeper Ranked</h1></a>
+<hr style="border-color: #2a2a2a; margin-bottom: 0">
+<div style="width: 100%; height: max-content;">
+  <canvas style="height: 480px; aspect-ratio: 1/1" id="canvas"></canvas>
+</div>
+<script src="/game/main.js" defer></script>
+</body>
+</html>

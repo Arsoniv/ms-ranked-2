@@ -1,11 +1,14 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
 import {WebSocket, WebSocketServer} from 'ws';
 import express, {Application, Request, Response} from 'express';
 import {generateBoard} from './boardCreator';
+import {truncateBoard} from './truncateBoard';
 import {calculateEloChange} from './eloUtils';
 import {Pool} from 'pg';
 import {IncomingMessage} from 'http';
 import Crypto from 'crypto';
+import cors from 'cors'
+import path from 'path';
 
 type UserAuthToken = {
     token: string;
@@ -23,7 +26,7 @@ type User = {
     id: number;
     name: string;
     password: string;
-    elo?: number;
+    elo: number;
     ws: WebSocket;
 }
 
@@ -38,6 +41,7 @@ type Match = {
     startTime: number;
     ranked: boolean;
     kFactor: number;
+    playerBoards: Board[];
 }
 
 type Queue = {
@@ -51,13 +55,13 @@ type Queue = {
     kFactor: number;
 }
 
+dotenv.config();
+
 const pool = new Pool({
-    user: process.env.PG_USER,
-    host: process.env.PG_HOST,
-    database: process.env.PG_NAME,
-    password: process.env.PG_PASSWORD,
-    port: parseInt(<string>process.env.PG_PORT),
+    connectionString: process.env.DATABASE_URL
 });
+
+console.log(pool);
 
 let queues: Queue[] = [];
 
@@ -68,12 +72,32 @@ let matches: Match[] = [];
 const app: Application = express();
 const PORT = 3000;
 
+
+app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/game/:id', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, 'public', 'game', 'index.html'));
+})
+
+app.get('/', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, 'public', 'home', 'index.html'));
+})
+
+app.get('/login', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, 'public', 'login', 'index.html'));
+})
+
+app.get('/signup', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, 'public', 'signup', 'index.html'));
+})
+
 
 app.post('/api/createAccount', async (req: Request, res: Response) => {
-    const {userName, passWord} = req.body;
+    const {username, password} = req.body;
 
-    if (!userName || !passWord) {
+    if (!username || !password) {
         res.status(400).send({
             error: "Missing required fields",
             message: "Please provide a valid userName and password."
@@ -86,14 +110,14 @@ app.post('/api/createAccount', async (req: Request, res: Response) => {
     //verify userName not in use
     const queryResponse = await client.query(
         'SELECT * FROM users WHERE username = $1',
-        [userName]
+        [username]
     )
 
     if (queryResponse.rows.length === 0) {
 
         await client.query(
             'INSERT INTO users (username, password) VALUES ($1, $2)',
-            [userName, passWord]
+            [username, password]
         )
 
         res.status(200).send({
@@ -201,7 +225,7 @@ app.post('/api/getAccountInfo', async (req: Request, res: Response) => {
     const client = await pool.connect();
 
     const queryResponse = await client.query(
-        'SELECT (id, created_at, rating, israted, matches, wins, losses, matchcount) FORM users WHERE username = $1',
+        'SELECT username, id, created_at, rating, israted, matches, wins, losses, matchcount FROM users WHERE username = $1',
         [userName]
     )
 
@@ -267,12 +291,40 @@ app.post('/api/getToken', async (req: Request, res: Response) => {
     }
 });
 
+app.post('/api/checkToken', async (req: Request, res: Response) => {
+    const {token} = req.body;
+
+    // Validate request data
+    if (!token) {
+        res.status(400).send({
+            error: "Missing required fields",
+            message: "Please provide your id and password."
+        });
+        return;
+    }
+
+    if (userTokens.some((tokenObject) => {
+        return tokenObject.token === token;
+    })) {
+
+        res.status(200).send({
+            "result": "Token valid"
+        })
+
+    }else {
+        res.status(202).send({
+            "error": "Token Invalid",
+            "message": "The account you are looking for does not exist, confirm your username and password."
+        })
+    }
+});
+
 app.get('/api/getLB', async (req: Request, res: Response) => {
 
     const client = await pool.connect();
 
     const queryResponse = await client.query(
-        'SELECT * FROM users ORDER BY elo DESC LIMIT 10;'
+        'SELECT * FROM users ORDER BY rating DESC LIMIT 10;'
     )
 
     res.status(200).send({lb: queryResponse.rows})
@@ -304,7 +356,7 @@ const handleMessage = async (message: string, id: number) => {
 
 
 
-    if (request.type === 2) {// client score update
+    if (request.type === 2)     {// client score update
         if (!match || !playerIndex) return;
 
         match.scores[playerIndex] = request.newScore;
@@ -328,18 +380,20 @@ const handleMessage = async (message: string, id: number) => {
         await client.query(
             'INSERT INTO matches (users, scores, boardWidth, boardHeight, mineCount, cells, matchStarted, matchEnded, winnerIndex, winnerString, startTime, ranked, kFactor)' +
             'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
-            [match.players, match.scores, match.board.boardWidth, match.board.boardHeight, match.board.mineCount, match.board.cells, match.matchStarted, match.matchEnded, match.winnerIndex, match.winnerString, match.startTime, match.ranked, match.kFactor]
+            [[match.players[0].id,match.players[1].id], match.scores, match.board.boardWidth, match.board.boardHeight, match.board.mineCount, match.board.cells, match.matchStarted, match.matchEnded, match.winnerIndex, match.winnerString, match.startTime, match.ranked, match.kFactor]
         )
 
-        await client.query(
-            'UPDATE users SET elo = $1 WHERE id = $2',
-            [newRatings.newWinnerElo, match.players[match.winnerIndex].id]
-        )
+        if (match.ranked) {
+            await client.query(
+                'UPDATE users SET rating = $1 WHERE id = $2',
+                [newRatings.newWinnerElo, match.players[match.winnerIndex].id]
+            )
 
-        await client.query(
-            'UPDATE users SET elo = $1 WHERE id = $2',
-            [newRatings.newLoserElo, match.players[playerIndex].id]
-        )
+            await client.query(
+                'UPDATE users SET rating = $1 WHERE id = $2',
+                [newRatings.newLoserElo, match.players[playerIndex].id]
+            )
+        }
 
         const sendObject = {
             type: 9,
@@ -353,49 +407,9 @@ const handleMessage = async (message: string, id: number) => {
         matches.splice(matchIndex, 1);
     }
 
-    else if (request.type === 4) { //client win
-        if (!match || !playerIndex) return;
+    else if (request.type === 0) {// mine request
 
-        match.matchEnded = true;
-        match.winnerIndex = playerIndex;
-        const loserIndex = playerIndex === 0 ? 1 : 0;
-        match.winnerString = match.players[match.winnerIndex].name;
-
-        const newRatings: {
-            newWinnerElo: number,
-            newLoserElo: number
-        } = calculateEloChange(<number>match.players[match.winnerIndex].elo, <number>match.players[loserIndex].elo, match.kFactor)
-
-        const client = await pool.connect();
-
-        await client.query(
-            'INSERT INTO matches (users, scores, boardWidth, boardHeight, mineCount, cells, matchStarted, matchEnded, winnerIndex, winnerString, startTime, ranked, kFactor)' +
-            'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
-            [match.players, match.scores, match.board.boardWidth, match.board.boardHeight, match.board.mineCount, match.board.cells, match.matchStarted, match.matchEnded, match.winnerIndex, match.winnerString, match.startTime, match.ranked, match.kFactor]
-        )
-
-        await client.query(
-            'UPDATE users SET elo = $1 WHERE id = $2',
-            [newRatings.newWinnerElo, match.players[match.winnerIndex].id]
-        )
-
-        await client.query(
-            'UPDATE users SET elo = $1 WHERE id = $2',
-            [newRatings.newLoserElo, match.players[loserIndex].id]
-        )
-
-        const sendObject = {
-            type: 9,
-            winnerIndex: match.winnerIndex,
-        }
-
-        match.players[match.winnerIndex].ws.send(JSON.stringify(sendObject));
-
-        match.players.forEach((user) => user.ws.close());
-
-        matches.splice(matchIndex, 1);
     }
-
 }
 
 const checkQueues = ():void => {
@@ -417,13 +431,22 @@ const checkQueues = ():void => {
                 startTime: Date.now(),
                 ranked: queue.ranked,
                 kFactor: queue.kFactor,
+                playerBoards: []
             }
 
-            const clonedMatchObject = JSON.parse(JSON.stringify(newMatchObject));
+            const clonedMatchObject: Match = JSON.parse(JSON.stringify(newMatchObject));
 
             clonedMatchObject.players.forEach((player: { password: string; }) => {
                 player.password = 'TRUNCATED FOR PRIVACY';
             })
+
+            clonedMatchObject.board = truncateBoard(newMatchObject.board);
+
+            console.log(clonedMatchObject.board);
+
+            newMatchObject.playerBoards = [
+                newMatchObject.board, newMatchObject.board
+            ]
 
             matchPlayers.forEach((user) => {
 
@@ -438,6 +461,24 @@ const checkQueues = ():void => {
             matches.push(newMatchObject);
         }
     })
+}
+
+const addQueue = (id: number, title: string, ranked: boolean, mines: number, width: number, height: number, kFactor: number) => {
+
+    const newQueue: Queue = {
+        users: [],
+        title: title,
+        ranked: ranked,
+        mines: mines,
+        width: width,
+        height: height,
+        id: id,
+        kFactor: kFactor
+    }
+
+    queues.push(newQueue);
+
+    console.log('New queue added: ', newQueue);
 }
 
 const handleDisconnect = (id: number): void => {
@@ -458,23 +499,27 @@ const handleDisconnect = (id: number): void => {
 
                 const newRatings: { newWinnerElo: number, newLoserElo: number } = calculateEloChange(<number> match.players[match.winnerIndex].elo, <number> match.players[index].elo, match.kFactor)
 
+                console.log(newRatings);
+
                 const client = await pool.connect();
 
                 await client.query(
                     'INSERT INTO matches (users, scores, boardWidth, boardHeight, mineCount, cells, matchStarted, matchEnded, winnerIndex, winnerString, startTime, ranked, kFactor)' +
                     'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
-                    [match.players, match.scores, match.board.boardWidth, match.board.boardHeight, match.board.mineCount, match.board.cells, match.matchStarted, match.matchEnded, match.winnerIndex, match.winnerString, match.startTime, match.ranked, match.kFactor]
+                    [[match.players[0].id,match.players[1].id], match.scores, match.board.boardWidth, match.board.boardHeight, match.board.mineCount, match.board.cells, match.matchStarted, match.matchEnded, match.winnerIndex, match.winnerString, match.startTime, match.ranked, match.kFactor]
                 )
 
-                await client.query(
-                    'UPDATE users SET elo = $1 WHERE id = $2',
-                    [newRatings.newWinnerElo, match.players[match.winnerIndex].id]
-                )
+                if (match.ranked) {
+                    await client.query(
+                        'UPDATE users SET rating = $1 WHERE id = $2',
+                        [newRatings.newWinnerElo, match.players[match.winnerIndex].id]
+                    )
 
-                await client.query(
-                    'UPDATE users SET elo = $1 WHERE id = $2',
-                    [newRatings.newLoserElo, match.players[index].id]
-                )
+                    await client.query(
+                        'UPDATE users SET rating = $1 WHERE id = $2',
+                        [newRatings.newLoserElo, match.players[index].id]
+                    )
+                }
 
                 const sendObject = {
                     type: 9,
@@ -528,6 +573,7 @@ wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
         name: queryResponse.rows[0].username,
         password: queryResponse.rows[0].password,
         ws: ws,
+        elo: queryResponse.rows[0].rating,
     }
 
     queue.users.push(newUserObject)
@@ -537,3 +583,15 @@ wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
 
     checkQueues();
 });
+
+
+addQueue(1, 'Easy Ranked', true, 20, 10, 10, 12);
+addQueue(2, 'Medium Ranked', true, 50, 15, 15, 16);
+addQueue(3, 'Hard Ranked', true, 70, 20, 20, 20);
+addQueue(4, 'Extreme Ranked', true, 140, 25, 25, 26);
+
+addQueue(11, 'Easy Unranked', false, 20, 10, 10, 12);
+addQueue(12, 'Medium Unranked', false, 40, 15, 15, 16);
+addQueue(13, 'Hard Unranked', false, 70, 20, 20, 20);
+addQueue(14, 'Extreme Unranked', false, 140, 25, 25, 26);
+

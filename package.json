@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "A open source multiplayer minesweeper server and client",
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "pg": "^8.13.1",
@@ -17,6 +18,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/pg": "^8.11.11",
     "@types/ws": "^8.5.13",

@@ -4,6 +4,8 @@ const passIn = document.getElementById("passIn");
 
 button.addEventListener('click', async (e) => {
 
+    button.disabled = true;
+    button.innerText = "Fetching account";
 
     const response2 = await fetch("http://localhost:3000/api/getAccountInfo", {
         method: "POST",
@@ -15,7 +17,17 @@ button.addEventListener('click', async (e) => {
         })
     })
 
-    const data2 = (await response2.json()).response;
+    const data2 = (await response2.json());
+
+    if (!data2.user) {
+        alert('Could not find account')
+        button.disabled = false;
+        return;
+    }
+
+    console.log(data2)
+
+    button.innerText = "Logging In";
 
     const response = await fetch("http://localhost:3000/api/getToken", {
         method: "POST",
@@ -27,4 +39,16 @@ button.addEventListener('click', async (e) => {
             password: passIn.value
         })
     })
+
+    const data = await response.json();
+
+    if (!data.token) {
+        alert('Login Failed, check you password')
+        button.disabled = false;
+        return;
+    }
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data2.user));
+    window.location = '/';
 })
