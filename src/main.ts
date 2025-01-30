@@ -463,7 +463,9 @@ const handleMessage = async (message: string, id: number) => {
 
                 matches.splice(matchIndex, 1);
 
-            }else {
+            }
+
+            else {
                 match.playerBoards[playerIndex].cells[reqY][reqX] = 10;
                 if (checkPlayerBoard(match.playerBoards[playerIndex])) {//playerWin
                     match.matchEnded = true;
@@ -548,11 +550,12 @@ const checkQueues = ():void => {
                 newMatchObject.board, newMatchObject.board
             ]
 
-            matchPlayers.forEach((user) => {
+            matchPlayers.forEach((user, index) => {
 
                 const data = JSON.stringify({
-                    typeId: 1,
+                    type: 1,
                     match: clonedMatchObject,
+                    index: index,
                 });
 
                 user.ws.send(data);
