@@ -1,0 +1,1 @@
+Minesweeper ranked is an open source client and server that allows users to play the popular game: minesweeper in a 1v1 format.
