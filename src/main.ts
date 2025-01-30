@@ -55,7 +55,7 @@ const pool = new Pool({
     host: process.env.PG_HOST,
     database: process.env.PG_NAME,
     password: process.env.PG_PASSWORD,
-    port: process.env.PG_PORT,
+    port: parseInt(<string>process.env.PG_PORT),
 });
 
 let queues: Queue[] = [];
