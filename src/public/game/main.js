@@ -2,12 +2,10 @@ let canvas = document.getElementById('canvas');
 let ctx = canvas.getContext("2d");
 
 let socket;
+let gameStarted = false;
 
 canvas.width = 1000;
 canvas.height = 1000;
-
-ctx.fillStyle = '#ffffff';
-ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 let queueId = parseInt(window.location.pathname.split('/')[window.location.pathname.split('/').length - 1]);
 

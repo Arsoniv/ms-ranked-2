@@ -331,6 +331,21 @@ app.get('/api/getLB', async (req: Request, res: Response) => {
 
 });
 
+const checkPlayerBoard = (playerBoard: Board): boolean => {
+
+    playerBoard.cells.forEach((row) => {
+        row.forEach((cell) => {
+            if (cell !== -1) {
+                if (cell !== 10) {
+                    return false;
+                }
+            }
+        })
+    })
+
+    return true
+}
+
 const handleMessage = async (message: string, id: number) => {
     const request: any = JSON.parse(message);
 
@@ -354,16 +369,7 @@ const handleMessage = async (message: string, id: number) => {
         if (user.id === id) return true
     })
 
-
-
-    if (request.type === 2)     {// client score update
-        if (!match || !playerIndex) return;
-
-        match.scores[playerIndex] = request.newScore;
-
-    }
-
-    else if (request.type === 3) { // client forfiet
+    if (request.type === 3) { // client forfiet
         if (!match || !playerIndex) return;
 
         match.matchEnded = true;
@@ -408,6 +414,100 @@ const handleMessage = async (message: string, id: number) => {
     }
 
     else if (request.type === 0) {// mine request
+        if (!request.cell || !match || !playerIndex) {
+            return;
+        }
+
+        const reqY: number = request.cell[0]
+        const reqX: number = request.cell[1]
+
+        if (match?.matchStarted) {
+            if (match.board.cells[reqY][reqX] === -1) { // hit mine, player lose
+
+                match.matchEnded = true;
+                match.winnerIndex = playerIndex === 0 ? 1 : 0;
+                match.winnerString = match.players[match.winnerIndex].name;
+
+                const newRatings: { newWinnerElo: number, newLoserElo: number } = calculateEloChange(<number> match.players[match.winnerIndex].elo, <number> match.players[playerIndex].elo, match.kFactor)
+
+                console.log(newRatings);
+
+                const client = await pool.connect();
+
+                await client.query(
+                    'INSERT INTO matches (users, scores, boardWidth, boardHeight, mineCount, cells, matchStarted, matchEnded, winnerIndex, winnerString, startTime, ranked, kFactor)' +
+                    'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
+                    [[match.players[0].id,match.players[1].id], match.scores, match.board.boardWidth, match.board.boardHeight, match.board.mineCount, match.board.cells, match.matchStarted, match.matchEnded, match.winnerIndex, match.winnerString, match.startTime, match.ranked, match.kFactor]
+                )
+
+                if (match.ranked) {
+                    await client.query(
+                        'UPDATE users SET rating = $1 WHERE id = $2',
+                        [newRatings.newWinnerElo, match.players[match.winnerIndex].id]
+                    )
+
+                    await client.query(
+                        'UPDATE users SET rating = $1 WHERE id = $2',
+                        [newRatings.newLoserElo, match.players[playerIndex].id]
+                    )
+                }
+
+                const sendObject = {
+                    type: 9,
+                    winnerIndex: match.winnerIndex,
+                }
+
+                match.players[match.winnerIndex].ws.send(JSON.stringify(sendObject));
+
+                match.players.forEach((user) => user.ws.close());
+
+                matches.splice(matchIndex, 1);
+
+            }else {
+                match.playerBoards[playerIndex].cells[reqY][reqX] = 10;
+                if (checkPlayerBoard(match.playerBoards[playerIndex])) {//playerWin
+                    match.matchEnded = true;
+                    match.winnerIndex = playerIndex
+                    const loserIndex = playerIndex === 0 ? 1 : 0;
+                    match.winnerString = match.players[match.winnerIndex].name;
+
+                    const newRatings: { newWinnerElo: number, newLoserElo: number } = calculateEloChange(<number> match.players[match.winnerIndex].elo, <number> match.players[loserIndex].elo, match.kFactor)
+
+                    console.log(newRatings);
+
+                    const client = await pool.connect();
+
+                    await client.query(
+                        'INSERT INTO matches (users, scores, boardWidth, boardHeight, mineCount, cells, matchStarted, matchEnded, winnerIndex, winnerString, startTime, ranked, kFactor)' +
+                        'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
+                        [[match.players[0].id,match.players[1].id], match.scores, match.board.boardWidth, match.board.boardHeight, match.board.mineCount, match.board.cells, match.matchStarted, match.matchEnded, match.winnerIndex, match.winnerString, match.startTime, match.ranked, match.kFactor]
+                    )
+
+                    if (match.ranked) {
+                        await client.query(
+                            'UPDATE users SET rating = $1 WHERE id = $2',
+                            [newRatings.newWinnerElo, match.players[match.winnerIndex].id]
+                        )
+
+                        await client.query(
+                            'UPDATE users SET rating = $1 WHERE id = $2',
+                            [newRatings.newLoserElo, match.players[loserIndex].id]
+                        )
+                    }
+
+                    const sendObject = {
+                        type: 9,
+                        winnerIndex: match.winnerIndex,
+                    }
+
+                    match.players[match.winnerIndex].ws.send(JSON.stringify(sendObject));
+
+                    match.players.forEach((user) => user.ws.close());
+
+                    matches.splice(matchIndex, 1);
+                }
+            }
+        }
 
     }
 }
@@ -428,7 +528,7 @@ const checkQueues = ():void => {
                 matchEnded: false,
                 winnerIndex: -1,
                 winnerString: '',
-                startTime: Date.now(),
+                startTime: Date.now() + 6000,
                 ranked: queue.ranked,
                 kFactor: queue.kFactor,
                 playerBoards: []
@@ -459,6 +559,19 @@ const checkQueues = ():void => {
             })
 
             matches.push(newMatchObject);
+
+            setTimeout(() => {
+                const i = matches.findIndex((match) => {
+                    if (match.startTime === newMatchObject.startTime) {
+                        return true;
+                    }else {
+                        return false;
+                    }
+                })
+
+                matches[i].matchStarted = true;
+
+            },6000)
         }
     })
 }
