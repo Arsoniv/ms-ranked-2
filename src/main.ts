@@ -1,3 +1,4 @@
+require('dotenv').config();
 import {WebSocket, WebSocketServer} from 'ws';
 import express, {Application, Request, Response} from 'express';
 import {generateBoard} from './boardCreator';
@@ -234,6 +235,17 @@ app.post('/api/getToken', async (req: Request, res: Response) => {
     }
 });
 
+app.get('/api/getLB', async (req: Request, res: Response) => {
+
+    const client = await pool.connect();
+
+    const queryResponse = await client.query(
+        'SELECT * FROM users ORDER BY elo DESC LIMIT 10;'
+    )
+
+    res.status(200).send({lb: queryResponse.rows})
+
+});
 
 const handleMessage = async (message: string, id: number) => {
     const request: any = JSON.parse(message);
