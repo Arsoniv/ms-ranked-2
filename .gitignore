@@ -4,4 +4,4 @@
 # Node.js
 /node_modules/
 
-/.env
+src/.env
