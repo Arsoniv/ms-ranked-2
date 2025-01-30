@@ -187,6 +187,38 @@ app.post('/api/deleteAccount', async (req: Request, res: Response) => {
     }
 });
 
+app.post('/api/getAccountInfo', async (req: Request, res: Response) => {
+    const {userName} = req.body;
+
+    if (!userName) {
+        res.status(400).send({
+            error: "Missing required fields",
+            message: "Please provide a username."
+        });
+        return;
+    }
+
+    const client = await pool.connect();
+
+    const queryResponse = await client.query(
+        'SELECT (id, created_at, rating, israted, matches, wins, losses, matchcount) FORM users WHERE username = $1',
+        [userName]
+    )
+
+    if (queryResponse.rows.length > 0) {
+
+        res.status(200).send({
+            user: queryResponse.rows[0]
+        })
+
+    }else {
+        res.status(404).send({
+            "error": "Account not found",
+            "message": "The account you are looking for does not exist, confirm username."
+        })
+    }
+})
+
 app.post('/api/getToken', async (req: Request, res: Response) => {
     const {id, password} = req.body;
 
