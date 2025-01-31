@@ -20,6 +20,8 @@ type Board = {
     boardHeight: number;
     mineCount: number;
     cells: number[][];
+    startX: number;
+    startY: number;
 }
 
 type User = {
@@ -130,7 +132,7 @@ app.post('/api/createAccount', async (req: Request, res: Response) => {
             "message": "Please pick another userName."
         })
     }
-
+    client.release();
 })
 
 app.post('/api/changePassword', async (req: Request, res: Response) => {
@@ -170,6 +172,7 @@ app.post('/api/changePassword', async (req: Request, res: Response) => {
             "message": "The account you are looking for does not exist, confirm your id and password."
         })
     }
+    client.release();
 });
 
 app.post('/api/deleteAccount', async (req: Request, res: Response) => {
@@ -209,6 +212,7 @@ app.post('/api/deleteAccount', async (req: Request, res: Response) => {
             "message": "The account you are looking for does not exist, confirm your username and password."
         })
     }
+    client.release();
 });
 
 app.post('/api/getAccountInfo', async (req: Request, res: Response) => {
@@ -241,6 +245,7 @@ app.post('/api/getAccountInfo', async (req: Request, res: Response) => {
             "message": "The account you are looking for does not exist, confirm username."
         })
     }
+    client.release();
 })
 
 app.post('/api/getToken', async (req: Request, res: Response) => {
@@ -289,6 +294,7 @@ app.post('/api/getToken', async (req: Request, res: Response) => {
             "message": "The account you are looking for does not exist, confirm your username and password."
         })
     }
+    client.release();
 });
 
 app.post('/api/checkToken', async (req: Request, res: Response) => {
@@ -328,46 +334,40 @@ app.get('/api/getLB', async (req: Request, res: Response) => {
     )
 
     res.status(200).send({lb: queryResponse.rows})
+    client.release();
 
 });
 
-const checkPlayerBoard = (playerBoard: Board): boolean => {
-
-    playerBoard.cells.forEach((row) => {
-        row.forEach((cell) => {
-            if (cell !== -1) {
-                if (cell !== 10) {
+const checkPlayerBoard = (playerBoard: Board, realBoard: Board): boolean => {
+    console.log('checking players board');
+    console.log(JSON.stringify(playerBoard));
+    console.log(JSON.stringify(realBoard));
+    for (let y = 0; y < playerBoard.cells.length; y++) {
+        for (let x = 0; x < playerBoard.cells[y].length; x++) {
+            if (playerBoard.cells[y][x] !== 10) {
+                if (realBoard.cells[y][x] !== -1) {
                     return false;
                 }
             }
-        })
-    })
+        }
+    }
+    return true;
+};
 
-    return true
-}
+
 
 const handleMessage = async (message: string, id: number) => {
-    const request: any = JSON.parse(message);
-
-
+    const request: any = await JSON.parse(message);
 
     const match = matches.find((match) => {
-        match.players.forEach((user) => {
-            if (user.id === id) return true;
-        })
-        return false;
-    })
+        return match.players.some((user) => user.id === id);
+    });
 
     const matchIndex = matches.findIndex((match) => {
-        match.players.forEach((user) => {
-            if (user.id === id) return true;
-        })
-        return false;
-    })
+        return match.players.some((user) => user.id === id);
+    });
 
-    const playerIndex: number | undefined = match?.players?.findIndex((user) => {
-        if (user.id === id) return true
-    })
+    const playerIndex = match?.players.findIndex((user) => user.id === id);
 
     if (request.type === 3) { // client forfiet
         if (!match || !playerIndex) return;
@@ -406,31 +406,35 @@ const handleMessage = async (message: string, id: number) => {
             winnerIndex: match.winnerIndex,
         }
 
-        match.players[match.winnerIndex].ws.send(JSON.stringify(sendObject));
-
-        match.players.forEach((user) => user.ws.close());
+        match.players.forEach((user) => {
+            user.ws.send(JSON.stringify(sendObject))
+            user.ws.close()
+        });
 
         matches.splice(matchIndex, 1);
+        client.release();
     }
 
     else if (request.type === 0) {// mine request
-        if (!request.cell || !match || !playerIndex) {
+        if (!request.cell || !match || playerIndex === undefined) {
+            console.log('denied')
             return;
         }
 
         const reqY: number = request.cell[0]
         const reqX: number = request.cell[1]
 
+        console.log(`sssss      y= ${reqY}, x= ${reqX}`)
+
         if (match?.matchStarted) {
             if (match.board.cells[reqY][reqX] === -1) { // hit mine, player lose
+                console.log('hit mine')
 
                 match.matchEnded = true;
                 match.winnerIndex = playerIndex === 0 ? 1 : 0;
                 match.winnerString = match.players[match.winnerIndex].name;
 
                 const newRatings: { newWinnerElo: number, newLoserElo: number } = calculateEloChange(<number> match.players[match.winnerIndex].elo, <number> match.players[playerIndex].elo, match.kFactor)
-
-                console.log(newRatings);
 
                 const client = await pool.connect();
 
@@ -457,17 +461,20 @@ const handleMessage = async (message: string, id: number) => {
                     winnerIndex: match.winnerIndex,
                 }
 
-                match.players[match.winnerIndex].ws.send(JSON.stringify(sendObject));
-
-                match.players.forEach((user) => user.ws.close());
+                match.players.forEach((user) => {
+                    user.ws.send(JSON.stringify(sendObject))
+                    user.ws.close()
+                });
 
                 matches.splice(matchIndex, 1);
-
+                client.release();
             }
 
             else {
+                console.log('not a mine')
                 match.playerBoards[playerIndex].cells[reqY][reqX] = 10;
-                if (checkPlayerBoard(match.playerBoards[playerIndex])) {//playerWin
+                if (checkPlayerBoard(match.playerBoards[playerIndex], match.board)) {//playerWin
+                    console.log('player win')
                     match.matchEnded = true;
                     match.winnerIndex = playerIndex
                     const loserIndex = playerIndex === 0 ? 1 : 0;
@@ -475,7 +482,6 @@ const handleMessage = async (message: string, id: number) => {
 
                     const newRatings: { newWinnerElo: number, newLoserElo: number } = calculateEloChange(<number> match.players[match.winnerIndex].elo, <number> match.players[loserIndex].elo, match.kFactor)
 
-                    console.log(newRatings);
 
                     const client = await pool.connect();
 
@@ -502,11 +508,13 @@ const handleMessage = async (message: string, id: number) => {
                         winnerIndex: match.winnerIndex,
                     }
 
-                    match.players[match.winnerIndex].ws.send(JSON.stringify(sendObject));
-
-                    match.players.forEach((user) => user.ws.close());
+                    match.players.forEach((user) => {
+                        user.ws.send(JSON.stringify(sendObject))
+                        user.ws.close()
+                    });
 
                     matches.splice(matchIndex, 1);
+                    client.release();
                 }
             }
         }
@@ -521,6 +529,8 @@ const checkQueues = ():void => {
             const matchPlayers = [queue.users[0], queue.users[1]];
 
             queue.users.splice(0, 2);
+
+            console.log(queue.users)
 
             const newMatchObject: Match = {
                 players: matchPlayers,
@@ -544,7 +554,6 @@ const checkQueues = ():void => {
 
             clonedMatchObject.board = truncateBoard(newMatchObject.board);
 
-            console.log(clonedMatchObject.board);
 
             newMatchObject.playerBoards = [
                 newMatchObject.board, newMatchObject.board
@@ -574,7 +583,7 @@ const checkQueues = ():void => {
 
                 matches[i].matchStarted = true;
 
-            },6000)
+            },5000)
         }
     })
 }
@@ -615,7 +624,6 @@ const handleDisconnect = (id: number): void => {
 
                 const newRatings: { newWinnerElo: number, newLoserElo: number } = calculateEloChange(<number> match.players[match.winnerIndex].elo, <number> match.players[index].elo, match.kFactor)
 
-                console.log(newRatings);
 
                 const client = await pool.connect();
 
@@ -642,11 +650,13 @@ const handleDisconnect = (id: number): void => {
                     winnerIndex: match.winnerIndex,
                 }
 
-                match.players[match.winnerIndex].ws.send(JSON.stringify(sendObject));
-
-                match.players.forEach((user) => user.ws.close());
+                match.players.forEach((user) => {
+                    user.ws.send(JSON.stringify(sendObject))
+                    user.ws.close()
+                });
 
                 matches.splice(index2, 1);
+                client.release();
             }
         })
     })
@@ -698,16 +708,17 @@ wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
     ws.on('close', () => handleDisconnect(id))
 
     checkQueues();
+    client.release();
 });
 
 
-addQueue(1, 'Easy Ranked', true, 20, 10, 10, 12);
-addQueue(2, 'Medium Ranked', true, 50, 15, 15, 16);
-addQueue(3, 'Hard Ranked', true, 70, 20, 20, 20);
-addQueue(4, 'Extreme Ranked', true, 140, 25, 25, 26);
+addQueue(1, 'Easy Ranked', true, 13, 10, 10, 12);
+addQueue(2, 'Medium Ranked', true, 25, 15, 15, 16);
+addQueue(3, 'Hard Ranked', true, 55, 20, 20, 20);
+addQueue(4, 'Extreme Ranked', true, 125, 25, 25, 26);
 
-addQueue(11, 'Easy Unranked', false, 20, 10, 10, 12);
-addQueue(12, 'Medium Unranked', false, 40, 15, 15, 16);
-addQueue(13, 'Hard Unranked', false, 70, 20, 20, 20);
-addQueue(14, 'Extreme Unranked', false, 140, 25, 25, 26);
+addQueue(11, 'Easy Unranked', false, 13, 10, 10, 12);
+addQueue(12, 'Medium Unranked', false, 25, 15, 15, 16);
+addQueue(13, 'Hard Unranked', false, 55, 20, 20, 20);
+addQueue(14, 'Extreme Unranked', false, 125, 25, 25, 26);
 

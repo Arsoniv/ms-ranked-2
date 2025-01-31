@@ -3,7 +3,9 @@ type Board = {
     boardHeight: number;
     mineCount: number;
     cells: number[][];
-};
+    startX: number;
+    startY: number;
+}
 
 export function truncateBoard(board: Board): Board {
 

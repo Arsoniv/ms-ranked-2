@@ -38,8 +38,9 @@
 <a href="/" style="text-decoration: none;"><h1 class="colorMain, hover" style="text-decoration: none; margin: 10px; width: fit-content; font-size: 40px">MineSweeper Ranked</h1></a>
 <hr style="border-color: #2a2a2a; margin-bottom: 0">
 <h3 id="info" style="font-size: 30px; margin: 15px; position: absolute; top: 9px; right: 9px;">Connecting</h3>
-<div style="width: 100%; height: max-content;">
+<div style="width: 100%; height: max-content; display: grid; grid-template-columns: 480px calc(100% - 480px); gap: 0">
   <canvas style="height: 480px; aspect-ratio: 1/1" id="canvas"></canvas>
+  <div style="background-color: #1f1f1f; border-radius: 8px; margin: 18px"></div>
 </div>
 <script src="/game/main.js" defer></script>
 </body>
