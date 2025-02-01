@@ -47,59 +47,75 @@
 </head>
 <body class="colorMain" style="border: solid 3px #acacac; margin: 6px;" id="body">
     <h1 class="colorMain, hover" style="margin: 10px; width: fit-content; font-size: 40px">MineSweeper Ranked</h1>
-    <div id="nav" style="position: absolute; top: 9px; right: 9px; display: grid; grid-template-columns: auto auto; font-family: Candara,serif; font-size: 30px;">
+    <div id="nav" style="position: absolute; top: 9px; right: 9px; display: grid; grid-template-columns: auto auto auto auto auto auto; font-family: Candara,serif; font-size: 30px;">
         <div style="font-size: 30px; margin: 15px;">
-            <a style="text-decoration: none; font-family: Candara,serif" href="/signup" class="colorMain hover">Sign up</a>
+            <a style="text-decoration: none; font-family: Candara,serif" href="/custom" class="colorMain hover">Create</a>
         </div>
         <div style="font-size: 30px; margin: 15px;">
+            <a style="text-decoration: none; font-family: Candara,serif" onclick="showPopUp()" class="colorMain hover">Join</a>
+        </div>
+        <h3 style="font-size: 30px; margin: 15px;">|</h3>
+        <div id="loginDiv" style="font-size: 30px; margin: 15px;">
+            <a style="text-decoration: none; font-family: Candara,serif" href="/signup" class="colorMain hover">Sign up</a>
+        </div>
+        <div id="signUpDiv" style="font-size: 30px; margin: 15px;">
             <a style="text-decoration: none; font-family: Candara,serif;" href="/login" class="colorMain hover">Log in</a>
+        </div>
+        <div id="userNameDiv" style="font-size: 30px; margin: 15px; display: none">
+            <a id="userNameText" style="text-decoration: none; font-family: Candara,serif;" href="/account" class="colorMain hover"></a>
         </div>
     </div>
     <hr style="border-color: #2a2a2a">
 
     <div style="margin: 3%;">
-        <div class="colorMain" style="width: 100%; aspect-ratio: 10/3.8; background-color: #1f1f1f; border-radius: 8px; display: grid; grid-template-columns: 23.85% 23.85% 23.85% 23.85%;  grid-template-rows: 47.5% 52.5%; gap: 1%">
+        <div class="colorMain" style="width: 100%; aspect-ratio: 10/3.8; background-color: #1f1f1f; border-radius: 8px; display: grid; grid-template-columns: 24.315% 24.315% 24.315% 24.315%;  grid-template-rows: 47.5% 52.5%; gap: 1% 0.38%">
             <div class="colorMain hoverC" style="width: 100%; height: 100%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(1)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Easy</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Ranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">10x10 | 13 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Easy</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Ranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">10x10 | 13 mines</h3>
             </div>
             <div class="colorMain hoverC" style="width: 100%; height: 100%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(2)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Medium</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Ranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">15x15 | 25 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Medium</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Ranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">15x15 | 25 mines</h3>
             </div>
             <div class="colorMain hoverC" style="width: 100%; height: 100%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(3)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Hard</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Ranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">20x20 | 55 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Hard</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Ranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">20x20 | 55 mines</h3>
             </div>
             <div class="colorMain hoverC" style="width: 100%; height: 100%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(4)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Extreme</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Ranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">25x25 | 125 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Any</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Ranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">25x25 | 125 mines</h3>
             </div>
             <div class="colorMain hoverB" style="width: 100%; height: 90%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(11)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Easy</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Unranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">10x10 | 13 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Easy</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Unranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">10x10 | 13 mines</h3>
             </div>
             <div class="colorMain hoverB" style="width: 100%; height: 90%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(12)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Medium</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Unranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">15x15 | 25 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Medium</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Unranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">15x15 | 25 mines</h3>
             </div>
             <div class="colorMain hoverB" style="width: 100%; height: 90%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(13)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Hard</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Unranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">20x20 | 55 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Hard</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Unranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">20x20 | 55 mines</h3>
             </div>
             <div class="colorMain hoverB" style="width: 100%; height: 90%; border-radius: 8px; margin: 3%; display: flex; flex-direction: column; justify-content: center; align-items: center;" onclick="enterQueue(14)">
-                <h1 style="font-size: 50px; margin: 5px 0;">Extreme</h1>
-                <h3 style="font-size: 20px; margin: 5px 0;">Unranked</h3>
-                <h3 style="font-size: 20px; margin: 5px 0;">25x25 | 125 mines</h3>
+                <h1 style="font-size: 350%; margin: 5px 0;">Any</h1>
+                <h3 style="font-size: 120%; margin: 5px 0;">Unranked</h3>
+                <h3 style="font-size: 120%; margin: 5px 0;">25x25 | 125 mines</h3>
             </div>
         </div>
+    </div>
+    <div id="popUp" style="background-color: #1f1f1f; border-radius: 8px; margin: 18px; width: 30%; height: 30%; left: 35%; top: 35%; position: absolute; border: #acacac solid  2px; display: none; justify-content: center; flex-direction: column; align-items: center">
+        <h1 style="font-size: 30px; margin: 10px">Join custom queue</h1>
+        <input placeholder="Queue ID..." type="text" id="queueIdIn">
+        <div class="hoverB" style="border-radius: 8px; height: 24px; aspect-ratio: 4/1; margin-top: 5px; display: flex; justify-content: center; flex-direction: column; align-items: center; font-size: 15px; font-family: 'Candara',serif" onclick="enterCustomQueue()">Join</div>
+        <div class="hoverB" style="border-radius: 8px; height: 24px; aspect-ratio: 4/1; margin-top: 5px; display: flex; justify-content: center; flex-direction: column; align-items: center; font-size: 15px; font-family: 'Candara',serif" onclick="hidePopUp()">Close</div>
     </div>
     <script src="/home/main.js" defer></script>
 </body>

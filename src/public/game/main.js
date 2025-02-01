@@ -24,7 +24,8 @@ let audioMuted = false;
 let secToMatchStart = 0;
 let user = {};
 let oppoUser = {};
-let drawVoteInprogress = false;
+let drawVoteInProgress = false;
+let selfDrawVoteInProgress = false;
 
 canvas.height = 480;
 canvas.width = 480;
@@ -87,11 +88,20 @@ const forfiet = async () => {
 }
 
 const drawVote = async () => {
-    if (gameStarted && !gameEnded) {
-        log(`You sent a draw request, if ${oppoUser.name} agrees to a draw within 10 seconds the match will end.`)
+    if (gameStarted && !gameEnded && !selfDrawVoteInProgress) {
+        selfDrawVoteInProgress = true;
+        if (!drawVoteInProgress) {
+            log(`You sent a draw request, if ${oppoUser.name} agrees to a draw within 10 seconds the match will end.`)
+        }
         socket.send(JSON.stringify({
             type: 4
         }));
+        console.log('sent draw vote');
+        drawButton.style.backgroundColor = '#496043'
+        setTimeout(() => {
+            selfDrawVoteInProgress = false;
+            drawButton.style.backgroundColor = '#272727'
+        }, 10000)
     }
 }
 
@@ -314,7 +324,9 @@ const handleMessage = async (message) => {
         }, match.startTime -Date.now() )
         chInfo(`Match starting in 6 seconds...`)
 
-    }else if (type === 9) {
+    }
+
+    else if (type === 9) {
         shouldDisplayDisconnect = false;
         if (request.winnerIndex === playerIndex) {
             chInfo('Victory')
@@ -323,11 +335,19 @@ const handleMessage = async (message) => {
         }else {
             chInfo('Defeat')
         }
-        setTimeout(()=> {
-            window.location = '/';
-        },500)
-    }else if (type === 13) { //message
+    }
+
+    else if (type === 13) { //message
         receiveMessage(request.message);
+    }
+
+    else if (type === 16) {
+        drawVoteInProgress = true;
+        log(`${oppoUser.name} has offered a draw, if you accept within 10 seconds, the match will end.`)
+        setTimeout(() => {
+            log(`${oppoUser.name}'s draw vote has expired.`)
+            drawVoteInProgress = false;
+        }, 10000)
     }
 }
 

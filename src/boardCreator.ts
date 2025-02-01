@@ -14,10 +14,21 @@ export function generateBoard(width: number, height: number, mines: number): Boa
 
     const board: number[][] = Array.from({ length: height }, () => Array(width).fill(0));
 
+    let startX = Math.floor(Math.random() * (width - 2)) + 1;
+    let startY = Math.floor(Math.random() * (height - 2)) + 1;
+
     let placedMines = 0;
+
     while (placedMines < mines) {
         const x = Math.floor(Math.random() * width);
         const y = Math.floor(Math.random() * height);
+
+        if (
+            Math.abs(x - startX) <= 1 &&
+            Math.abs(y - startY) <= 1
+        ) {
+            continue;
+        }
 
         if (board[y][x] !== -1) {
             board[y][x] = -1;
@@ -47,31 +58,13 @@ export function generateBoard(width: number, height: number, mines: number): Boa
         }
     }
 
-    let startX: number = 0, startY: number = 0;
-    let foundSafeZone = false;
-
-    while (!foundSafeZone) {
-        startX = Math.floor(Math.random() * (width - 2));
-        startY = Math.floor(Math.random() * (height - 2));
-        foundSafeZone = true;
-
-        for (let dy = 0; dy < 3; dy++) {
-            for (let dx = 0; dx < 3; dx++) {
-                if (board[startY + dy][startX + dx] === -1) {
-                    foundSafeZone = false;
-                    break;
-                }
-            }
-            if (!foundSafeZone) break;
-        }
-    }
-
+    console.log(board);
     return {
         boardWidth: width,
         boardHeight: height,
         mineCount: mines,
         cells: board,
-        startX: startX + 1,
-        startY: startY + 1
+        startX: startX,
+        startY: startY,
     };
 }

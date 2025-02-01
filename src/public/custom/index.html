@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create a custom queue</title>
+    <style>
+        .colorMain {
+            background-color: #272727;
+            color: #acacac;
+            font-family: "Candara Light",serif;
+            padding: 0;
+            margin: 0;
+        }
+        .hover {
+            color: #acacac;
+            cursor: pointer;
+            transition: color 0.35s ease;
+        }
+
+        .hover:hover {
+            cursor: pointer;
+            color: #a7f592;
+        }
+
+        .hoverB {
+            background-color: #272727;
+            cursor: pointer;
+            transition: color 0.35s ease;
+        }
+
+        .hoverB:hover {
+            cursor: pointer;
+            background-color: #496043;
+        }
+
+        .hoverC {
+            background-color: #272727;
+            cursor: pointer;
+            transition: color 0.35s ease;
+        }
+
+        .hoverC:hover {
+            cursor: pointer;
+            background-color: #7c472d;
+        }
+    </style>
+</head>
+<body class="colorMain" style="border: solid 3px #acacac; margin: 6px;" id="body">
+<a href="/" style="text-decoration: none;"><h1 class="colorMain, hover" style="text-decoration: none; margin: 10px; width: fit-content; font-size: 40px">MineSweeper Ranked</h1></a>
+<hr style="border-color: #2a2a2a">
+<div style="margin: 5px; padding: 5px">
+    <h3>When you make a custom queue, you will receive a queue id that people can use to join</h3>
+    <h3>Currently custom queues can only be used for one match that will automatically start once 2 users have joined</h3>
+    <h3>In the future both of these limitations will change.</h3>
+</div>
+
+<form>
+    <input id="widthIn" placeholder="Board width/height..." type="text">
+    <input id="minesIn" placeholder="Mine count..." type="text">
+    <button onclick="createCustomQueue()">Create queue</button>
+</form>
+
+<script src="/custom/main.js" defer></script>
+</body>
+</html>
