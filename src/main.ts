@@ -44,6 +44,7 @@ type Match = {
     ranked: boolean;
     kFactor: number;
     playerBoards: Board[];
+    drawOffers: boolean[];
 }
 
 type Queue = {
@@ -520,6 +521,19 @@ const handleMessage = async (message: string, id: number) => {
         }
 
     }
+
+    else if (request.type === 12) {//chat message
+        if (match && request.messageText) {
+            match.players.forEach((user) => {
+                if (user.id !== id) {
+                    user.ws.send(JSON.stringify({
+                        type: 13,
+                        message: request.messageText
+                    }))
+                }
+            })
+        }
+    }
 }
 
 const checkQueues = ():void => {
@@ -543,7 +557,8 @@ const checkQueues = ():void => {
                 startTime: Date.now() + 6000,
                 ranked: queue.ranked,
                 kFactor: queue.kFactor,
-                playerBoards: []
+                playerBoards: [],
+                drawOffers: [false, false]
             }
 
             const clonedMatchObject: Match = JSON.parse(JSON.stringify(newMatchObject));
@@ -711,6 +726,26 @@ wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
     client.release();
 });
 
+const wss2 = new WebSocketServer({port: 4000 })
+
+let subList: WebSocket[] = [];
+
+wss2.on("connection", async (ws2: WebSocket, req: IncomingMessage) => {
+    subList.push(ws2)
+
+    setInterval(() => {
+        subList.forEach((ws, index) => {
+            if (ws.readyState === WebSocket.CLOSED) {
+                subList.splice(index, 1);
+            } else {
+                ws.send(JSON.stringify({
+                    type: 15,
+
+                }))
+            }
+        })
+    }, 1500)
+})
 
 addQueue(1, 'Easy Ranked', true, 13, 10, 10, 12);
 addQueue(2, 'Medium Ranked', true, 25, 15, 15, 16);

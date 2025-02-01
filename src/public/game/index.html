@@ -16,7 +16,6 @@
       cursor: pointer;
       transition: color 0.35s ease;
     }
-
     .hover:hover {
       cursor: pointer;
       color: #a7f592;
@@ -34,13 +33,31 @@
     }
   </style>
 </head>
-<body class="colorMain" style="border: solid 3px #acacac; margin: 6px; height: 550px">
+<body class="colorMain" style="border: solid 3px #acacac; margin: 6px; height: 100%">
 <a href="/" style="text-decoration: none;"><h1 class="colorMain, hover" style="text-decoration: none; margin: 10px; width: fit-content; font-size: 40px">MineSweeper Ranked</h1></a>
 <hr style="border-color: #2a2a2a; margin-bottom: 0">
 <h3 id="info" style="font-size: 30px; margin: 15px; position: absolute; top: 9px; right: 9px;">Connecting</h3>
-<div style="width: 100%; height: max-content; display: grid; grid-template-columns: 480px calc(100% - 480px); gap: 0">
+<div style="width: 100%; height: max-content; display: grid; grid-template-columns: 120px 480px calc(100% - 600px); gap: 0">
+  <div style="background-color: #1f1f1f; border-radius: 8px; margin: 18px; width: calc(100% - 36px); height: calc(100% - 36px)">
+    <a href="/" style="text-decoration: none;"><div class="hoverB" style="aspect-ratio: 1/1; width: 80%; margin: 10%; border-radius: 10%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 140%; font-family: Candara, serif; color: #acacac">Home</div></a>
+    <div id="drawButton" onclick="drawVote()" class="hoverB" style="aspect-ratio: 1/1; width: 80%; margin: 10%; border-radius: 10%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 140%; font-family: Candara, serif">Draw</div>
+    <div onclick="forfiet()" class="hoverB" style="aspect-ratio: 1/1; width: 80%; margin: 10%; border-radius: 10%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 180%; font-family: Candara, serif">FF</div>
+    <div id="muteButton" onclick="toggleMute()" class="hoverB" style="aspect-ratio: 1/1; width: 80%; margin: 10%; border-radius: 10%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 120%; font-family: Candara, serif"><div>Toggle</div><div>Chat</div></div>
+    <div id="audioToggle" onclick="toggleAudioMute()" class="hoverB" style="aspect-ratio: 1/1; width: 80%; margin: 10%; border-radius: 10%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 120%; font-family: Candara, serif"><div>Toggle</div><div>Audio</div></div>
+    <div class="hoverB" style="aspect-ratio: 1/1; width: 80%; margin: 10%; border-radius: 10%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 140%; font-family: Candara, serif"></div>
+  </div>
   <canvas style="height: 480px; aspect-ratio: 1/1" id="canvas"></canvas>
-  <div style="background-color: #1f1f1f; border-radius: 8px; margin: 18px"></div>
+  <div style="background-color: #1f1f1f; border-radius: 8px; margin: 18px; width: calc(100% - 66px); padding: 15px; display: flex; flex-direction: column;">
+    <div id="chatBox" style="height: 250px; overflow-y: auto; background-color: #272727; border-radius: 8px; padding: 10px; font-family: Arial, sans-serif; color: #acacac; font-size: 14px; flex: 1;"></div>
+    <div style="display: flex; margin-top: 10px;">
+      <input id="chatInput" type="text" placeholder="Type a message..." style="flex: 1; padding: 10px; border-radius: 8px; background-color: #272727; outline: none; color: #acacac; ">
+      <button class="hoverB colorMain" onclick="sendMessage()" style="margin-left: 10px; padding: 10px 15px; border: none; border-radius: 8px; color: #acacac; cursor: pointer; font-size: 100%; font-family: Candara, serif">Send</button>
+    </div>
+  </div>
+<div id="popUp" style="background-color: #1f1f1f; border-radius: 8px; margin: 18px; width: 60%; height: 60%; left: 20%; top: 20%; position: absolute; border: #496043 solid  2px; display: none; justify-content: center; flex-direction: column; align-items: center">
+  <h1 style="font-size: 90px; margin: 10px">You won!</h1>
+  <div style="font-size: 45px">homey1 stepped on a mine.</div>
+  <div class="hoverB" style="border-radius: 8px; height: 48px; aspect-ratio: 4/1; border: #496043 solid  2px; margin-top: 25px; display: flex; justify-content: center; flex-direction: column; align-items: center; font-size: 35px; font-family: 'Candara',serif" onclick="exitPopUp()">Close</div>
 </div>
 <script src="/game/main.js" defer></script>
 </body>
