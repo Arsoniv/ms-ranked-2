@@ -64,7 +64,13 @@ export function generateBoard(width: number, height: number, mines: number): Boa
         }
         let hiddenBoard = board;
 
-        hiddenBoard.forEach(row)
+        hiddenBoard.forEach((row) => {
+            row.forEach((cell) => {
+                if (cell !== -1){
+                    cell = 0;
+                }
+            })
+        })
 
         const solver = new MinesweeperSolver(board)
         solveAble = solver.isSolvable();
