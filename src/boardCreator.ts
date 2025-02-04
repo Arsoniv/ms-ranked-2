@@ -1,4 +1,4 @@
-import MinesweeperSolver from './solver';
+import MinesweeperSolver from './solver.js';
 
 type Board = {
     boardWidth: number;

@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import {WebSocket, WebSocketServer} from 'ws';
 import express, {Application, Request, Response} from 'express';
-import {generateBoard} from './boardCreator';
-import {truncateBoard} from './truncateBoard';
-import {calculateEloChange} from './eloUtils';
+import {generateBoard} from './boardCreator.js';
+import {truncateBoard} from './truncateBoard.js';
+import {calculateEloChange} from './eloUtils.js';
 import {Pool} from 'pg';
 import {IncomingMessage} from 'http';
 import Crypto from 'crypto';
