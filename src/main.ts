@@ -57,7 +57,6 @@ type Queue = {
     id: number;
     kFactor: number;
     customQueue: boolean;
-    any: boolean;
 }
 
 dotenv.config();
@@ -76,7 +75,6 @@ let matches: Match[] = [];
 
 const app: Application = express();
 const PORT = 3000;
-
 
 app.use(cors());
 app.use(express.json());
@@ -102,7 +100,6 @@ app.get('/custom', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, 'public', 'custom', 'index.html'));
 })
 
-
 app.post('/api/createAccount', async (req: Request, res: Response) => {
     const {username, password} = req.body;
 
@@ -118,8 +115,8 @@ app.post('/api/createAccount', async (req: Request, res: Response) => {
 
     //verify userName not in use
     const queryResponse = await client.query(
-        'SELECT * FROM users WHERE username = $1',
-        [username]
+        'SELECT * FROM users WHERE lower(username) = $1',
+        [username.toLowerCase()]
     )
 
     if (queryResponse.rows.length === 0) {
@@ -236,8 +233,8 @@ app.post('/api/getAccountInfo', async (req: Request, res: Response) => {
     const client = await pool.connect();
 
     const queryResponse = await client.query(
-        'SELECT username, id, created_at, rating, israted, matches, wins, losses, matchcount FROM users WHERE username = $1',
-        [userName]
+        'SELECT username, id, created_at, rating, israted, matches, wins, losses, matchcount FROM users WHERE lower(username) = $1',
+        [userName.toLowerCase()]
     )
 
     if (queryResponse.rows.length > 0) {
@@ -332,6 +329,39 @@ app.post('/api/checkToken', async (req: Request, res: Response) => {
     }
 });
 
+app.post('/api/createQueue', async (req: Request, res: Response) => {
+    const {token, mines, width} = req.body;
+
+    if (!token|| !mines || !width || (width * width) < mines) {
+        res.status(400).send({
+            error: "Missing required fields",
+            message: "Please provide your id and password."
+        });
+        return;
+    }
+
+    if (userTokens.some((tokenObject) => {
+        return tokenObject.token === token;
+    })) {
+
+        const newId = currentCustomQueueId;
+        currentCustomQueueId++;
+
+        addQueue(newId, `Custom queue ${newId}`, false, mines, width, width, 0, true);
+
+        res.status(200).send({
+            "result": "Queue Made",
+            "queueId": newId
+        })
+
+    }else {
+        res.status(202).send({
+            "error": "Token Invalid",
+            "message": "The account you are looking for does not exist, confirm your username and password."
+        })
+    }
+});
+
 app.get('/api/getLB', async (req: Request, res: Response) => {
 
     const client = await pool.connect();
@@ -346,9 +376,6 @@ app.get('/api/getLB', async (req: Request, res: Response) => {
 });
 
 const checkPlayerBoard = (playerBoard: Board, realBoard: Board): boolean => {
-    console.log('checking players board');
-    console.log(JSON.stringify(playerBoard));
-    console.log(JSON.stringify(realBoard));
     for (let y = 0; y < playerBoard.cells.length; y++) {
         for (let x = 0; x < playerBoard.cells[y].length; x++) {
             if (playerBoard.cells[y][x] !== 10) {
@@ -361,13 +388,19 @@ const checkPlayerBoard = (playerBoard: Board, realBoard: Board): boolean => {
     return true;
 };
 
-
-
 const handleMessage = async (message: string, id: number) => {
     const request: any = await JSON.parse(message);
 
+    const matchST: number = request.matchStartTime;
+
     const match = matches.find((match) => {
-        return match.players.some((user) => user.id === id);
+        if ((match.players.some((user) => user.id === id)&& !match.matchEnded)) return true;
+    });
+
+    const softMatch = matches.find((match, index) => {
+        if (match.players.some((user) => user.id === id)&&match.startTime === matchST&& matchST !== undefined) {
+            return true;
+        };
     });
 
     const matchIndex = matches.findIndex((match) => {
@@ -377,7 +410,7 @@ const handleMessage = async (message: string, id: number) => {
     const playerIndex = match?.players.findIndex((user) => user.id === id);
 
     if (request.type === 3) { // client forfiet
-        if (!match || playerIndex === undefined) return;
+        if (!match || playerIndex === undefined || match.matchEnded) return;
 
         match.matchEnded = true;
         match.winnerIndex = playerIndex === 0 ? 1 : 0;
@@ -415,15 +448,13 @@ const handleMessage = async (message: string, id: number) => {
 
         match.players.forEach((user) => {
             user.ws.send(JSON.stringify(sendObject))
-            user.ws.close()
         });
 
-        matches.splice(matchIndex, 1);
         client.release();
     }
 
     else if (request.type === 4) {// draw vote
-        if (!match || playerIndex === undefined) return;
+        if (!match || playerIndex === undefined || match.matchEnded) return;
 
         const oppoIndex = playerIndex === 0 ? 1 : 0;
 
@@ -446,11 +477,9 @@ const handleMessage = async (message: string, id: number) => {
             }
 
             match.players.forEach((user) => {
-                user.ws.send(JSON.stringify(sendObject))
-                user.ws.close()
+                user.ws.send(JSON.stringify(sendObject));
             });
 
-            matches.splice(matchIndex, 1);
         }else {
             console.log(`Draw vote by ${playerIndex}`)
             match.drawOffers[playerIndex] = true;
@@ -469,7 +498,7 @@ const handleMessage = async (message: string, id: number) => {
     }
 
     else if (request.type === 0) {// mine request
-        if (!request.cell || !match || playerIndex === undefined) {
+        if (!request.cell || !match || playerIndex === undefined || match.matchEnded) {
             console.log('denied')
             return;
         }
@@ -516,18 +545,14 @@ const handleMessage = async (message: string, id: number) => {
 
                 match.players.forEach((user) => {
                     user.ws.send(JSON.stringify(sendObject))
-                    user.ws.close()
                 });
 
-                matches.splice(matchIndex, 1);
                 client.release();
             }
 
             else {
-                console.log('not a mine')
                 match.playerBoards[playerIndex].cells[reqY][reqX] = 10;
                 if (checkPlayerBoard(match.playerBoards[playerIndex], match.board)) {//playerWin
-                    console.log('player win')
                     match.matchEnded = true;
                     match.winnerIndex = playerIndex
                     const loserIndex = playerIndex === 0 ? 1 : 0;
@@ -562,11 +587,9 @@ const handleMessage = async (message: string, id: number) => {
                     }
 
                     match.players.forEach((user) => {
-                        user.ws.send(JSON.stringify(sendObject))
-                        user.ws.close()
+                        user.ws.send(JSON.stringify(sendObject));
                     });
 
-                    matches.splice(matchIndex, 1);
                     client.release();
                 }
             }
@@ -575,15 +598,32 @@ const handleMessage = async (message: string, id: number) => {
     }
 
     else if (request.type === 12) {//chat message
-        if (match && request.messageText) {
-            match.players.forEach((user) => {
-                if (user.id !== id) {
-                    user.ws.send(JSON.stringify({
-                        type: 13,
-                        message: request.messageText
-                    }))
-                }
-            })
+        if (softMatch && request.messageText) {
+            if (!(match === undefined)) {
+                match.players.forEach((user) => {
+                    if (user.id !== id) {
+                        user.ws.send(JSON.stringify({
+                            type: 13,
+                            message: request.messageText
+                        }))
+                    }
+                })
+                console.log('Message sent in active match')
+            }else {
+                softMatch.players.forEach((user) => {
+                    if (user.id !== id) {
+                        user.ws.send(JSON.stringify({
+                            type: 13,
+                            message: request.messageText
+                        }))
+                        console.log('sent to', user.id);
+                    }
+                })
+                console.log('Message sent in soft match')
+            }
+        }else {
+            console.log('denied, 12')
+            console.log(`${softMatch}, SPACE ${request.messageText}`)
         }
     }
 }
@@ -594,14 +634,22 @@ const checkQueues = ():void => {
 
             const matchPlayers = [queue.users[0], queue.users[1]];
 
-            queue.users.splice(0, 2);
+            console.log(matchPlayers);
+
+            queues.forEach((queue) => {
+                queue.users.forEach((user, index) => {
+                    if (user.id === matchPlayers[0].id || user.id === matchPlayers[1].id) {
+                        queue.users.splice(index, 1);
+                    }
+                });
+            });
 
             console.log(matchPlayers)
 
             const newMatchObject: Match = {
                 players: matchPlayers,
                 scores: [0, 0],
-                board: generateBoard(queue.width, queue.height, queue.mines),
+                board: <Board>generateBoard(queue.width, queue.height, queue.mines),
                 matchStarted: false,
                 matchEnded: false,
                 winnerIndex: -1,
@@ -652,14 +700,16 @@ const checkQueues = ():void => {
                     }
                 })
 
-                matches[i].matchStarted = true;
+                if (matches[i]) {
+                    matches[i].matchStarted = true;
+                }
 
             },5000)
         }
     })
 }
 
-const addQueue = (id: number, title: string, ranked: boolean, mines: number, width: number, height: number, kFactor: number, customQueue: boolean, anyQueue: boolean = false) => {
+const addQueue = (id: number, title: string, ranked: boolean, mines: number, width: number, height: number, kFactor: number, customQueue: boolean) => {
 
     const newQueue: Queue = {
         users: [],
@@ -670,8 +720,7 @@ const addQueue = (id: number, title: string, ranked: boolean, mines: number, wid
         height: height,
         id: id,
         kFactor: kFactor,
-        customQueue: customQueue,
-        any: anyQueue,
+        customQueue: customQueue
     }
 
     queues.push(newQueue);
@@ -725,48 +774,14 @@ const handleDisconnect = (id: number): void => {
 
                 match.players.forEach((user) => {
                     user.ws.send(JSON.stringify(sendObject))
-                    user.ws.close()
+                    match.matchEnded = true;
                 });
 
-                matches.splice(index2, 1);
                 client.release();
             }
         })
     })
 }
-
-app.post('/api/createQueue', async (req: Request, res: Response) => {
-    const {token, mines, width} = req.body;
-
-    if (!token|| !mines || !width || (width * width) < mines) {
-        res.status(400).send({
-            error: "Missing required fields",
-            message: "Please provide your id and password."
-        });
-        return;
-    }
-
-    if (userTokens.some((tokenObject) => {
-        return tokenObject.token === token;
-    })) {
-
-        const newId = currentCustomQueueId;
-        currentCustomQueueId++;
-
-        addQueue(newId, `Custom queue ${newId}`, false, mines, width, width, 0, true);
-
-        res.status(200).send({
-            "result": "Queue Made",
-            "queueId": newId
-        })
-
-    }else {
-        res.status(202).send({
-            "error": "Token Invalid",
-            "message": "The account you are looking for does not exist, confirm your username and password."
-        })
-    }
-});
 
 app.listen(PORT, () => {
     console.log(`Api is now running on port: ${PORT}`);
@@ -823,28 +838,26 @@ let subList: WebSocket[] = [];
 
 wss2.on("connection", async (ws2: WebSocket, req: IncomingMessage) => {
     subList.push(ws2)
-
-    setInterval(() => {
-        subList.forEach((ws, index) => {
-            if (ws.readyState === WebSocket.CLOSED) {
-                subList.splice(index, 1);
-            } else {
-                ws.send(JSON.stringify({
-                    type: 15,
-
-                }))
-            }
-        })
-    }, 1500)
 })
+
+setInterval(() => {
+    subList.forEach((ws, index) => {
+        if (ws.readyState === WebSocket.CLOSED) {
+            subList.splice(index, 1);
+        } else {
+            ws.send(JSON.stringify({
+                type: 15,
+
+            }))
+        }
+    })
+}, 1500)
 
 addQueue(1, 'Easy Ranked', true, 13, 10, 10, 12, false);
 addQueue(2, 'Medium Ranked', true, 25, 15, 15, 16, false);
 addQueue(3, 'Hard Ranked', true, 55, 20, 20, 20, false);
-addQueue(4, 'Any Ranked', true, 125, 25, 25, 26, false, true);
 
 addQueue(11, 'Easy Unranked', false, 13, 10, 10, 12, false);
 addQueue(12, 'Medium Unranked', false, 25, 15, 15, 16, false);
 addQueue(13, 'Hard Unranked', false, 55, 20, 20, 20, false);
-addQueue(14, 'Any Unranked', false, 125, 25, 25, 26, false, true);
 

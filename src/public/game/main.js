@@ -26,6 +26,7 @@ let user = {};
 let oppoUser = {};
 let drawVoteInProgress = false;
 let selfDrawVoteInProgress = false;
+let matchStartTime = -1;
 
 canvas.height = 480;
 canvas.width = 480;
@@ -151,6 +152,7 @@ async function sendMessage() {
         socket.send(JSON.stringify({
             type: 12,
             messageText: messageText,
+            matchStartTime: matchStartTime
         }));
 
         input.value = "";
@@ -176,7 +178,7 @@ function receiveMessage(messageText) {
 
 function drawBoard() {
     ctx.fillStyle = fillStyle;
-    ctx.font = (cellHeight - cellHeight*0.8)+'px Arial'
+    ctx.font = (cellHeight - cellHeight * 0.4)+'px Arial'
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -300,6 +302,7 @@ const handleMessage = async (message) => {
         visibleBoard = initVisibleBoard(cellsHigh, cellsWide)
         user = match.players[playerIndex];
         oppoUser = match.players[oppoIndex];
+        matchStartTime = match.startTime;
         if (!audioMuted) {
             await audio.play()
         }
@@ -309,7 +312,7 @@ const handleMessage = async (message) => {
             });
         }
         log(`${match.players[playerIndex].name} [${match.players[playerIndex].elo}] vs ${match.players[oppoIndex].name} [${match.players[oppoIndex].elo}]`)
-        log('Good Luck!')
+        log(`${match.board.boardWidth} x ${match.board.boardHeight}, ${match.board.mineCount} mines`)
         setTimeout(() => {
             gameStarted = true;
             chInfo(`Ranked Mode - ${match.players[oppoIndex].name} [${match.players[oppoIndex].elo}]`)
@@ -327,13 +330,17 @@ const handleMessage = async (message) => {
     }
 
     else if (type === 9) {
+        gameEnded = true;
         shouldDisplayDisconnect = false;
         if (request.winnerIndex === playerIndex) {
             chInfo('Victory')
+            log(`${user.name} has won.`)
         }else if (request.winnerIndex === -1) {
             chInfo('Draw')
+            log(`Match ended | Draw by vote`)
         }else {
             chInfo('Defeat')
+            log(`${oppoUser.name} has won.`)
         }
     }
 
@@ -351,9 +358,9 @@ const handleMessage = async (message) => {
     }
 }
 
-const connectToWebsocket = () => {
+const connectToWebsocket = (id) => {
     if (token && queueId) {
-        socket = new WebSocket(`ws://localhost:8080?queueId=${queueId}&token=${token}`);
+        socket = new WebSocket(`ws://localhost:8080?queueId=${id}&token=${token}`);
 
         socket.onopen = () => {
             chInfo('Connected');
@@ -383,7 +390,17 @@ const connectToWebsocket = () => {
 
 
 if (Number.isInteger(queueId) && token) {
-    connectToWebsocket()
+    if (queueId === 4) {
+        connectToWebsocket(1);
+        connectToWebsocket(2);
+        connectToWebsocket(3);
+    }else if (queueId === 14) {
+        connectToWebsocket(11);
+        connectToWebsocket(12);
+        connectToWebsocket(13);
+    }else {
+        connectToWebsocket(queueId);
+    }
 }else {
     window.location = '/';
 }
