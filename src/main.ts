@@ -10,6 +10,9 @@ import Crypto from 'crypto';
 import cors from 'cors'
 import path from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 type UserAuthToken = {
     token: string;
     id: number;
