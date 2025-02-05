@@ -790,7 +790,7 @@ app.listen(PORT, () => {
     console.log(`Api is now running on port: ${PORT}`);
 });
 
-const wss = new WebSocketServer({ port: 6000 });
+const wss = new WebSocketServer({ port: 4000 });
 
 wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
     const queryString = req.url?.split("?")[1];
@@ -835,7 +835,7 @@ wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
     client.release();
 });
 
-const wss2 = new WebSocketServer({port: 4000 })
+const wss2 = new WebSocketServer({port: 5000 })
 
 let subList: WebSocket[] = [];
 
