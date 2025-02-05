@@ -27,7 +27,7 @@ button.addEventListener("click", async (e) => {
 
     button.innerText = 'Requesting Account'
 
-    const response = await fetch("http://localhost:3000/api/createAccount", {
+    const response = await fetch("/api/createAccount", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

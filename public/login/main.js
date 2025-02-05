@@ -7,7 +7,7 @@ button.addEventListener('click', async (e) => {
     button.disabled = true;
     button.innerText = "Fetching account";
 
-    const response2 = await fetch("http://localhost:3000/api/getAccountInfo", {
+    const response2 = await fetch("/api/getAccountInfo", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -29,7 +29,7 @@ button.addEventListener('click', async (e) => {
 
     button.innerText = "Logging In";
 
-    const response = await fetch("http://localhost:3000/api/getToken", {
+    const response = await fetch("/api/getToken", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
