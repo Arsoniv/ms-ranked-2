@@ -790,7 +790,7 @@ app.listen(PORT, () => {
     console.log(`Api is now running on port: ${PORT}`);
 });
 
-const wss = new WebSocketServer({ port: 4000 });
+const wss = new WebSocketServer({ port: 8080 });
 
 wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
     const queryString = req.url?.split("?")[1];
@@ -834,27 +834,6 @@ wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
     checkQueues();
     client.release();
 });
-
-const wss2 = new WebSocketServer({port: 5000 })
-
-let subList: WebSocket[] = [];
-
-wss2.on("connection", async (ws2: WebSocket, req: IncomingMessage) => {
-    subList.push(ws2)
-})
-
-setInterval(() => {
-    subList.forEach((ws, index) => {
-        if (ws.readyState === WebSocket.CLOSED) {
-            subList.splice(index, 1);
-        } else {
-            ws.send(JSON.stringify({
-                type: 15,
-
-            }))
-        }
-    })
-}, 1500)
 
 addQueue(1, 'Easy Ranked', true, 13, 10, 10, 12, false);
 addQueue(2, 'Medium Ranked', true, 25, 15, 15, 16, false);
