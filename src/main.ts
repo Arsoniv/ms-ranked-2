@@ -9,6 +9,9 @@ import {IncomingMessage} from 'http';
 import Crypto from 'crypto';
 import cors from 'cors'
 import path from 'path';
+import path from 'path';
+import urlp from 'url';
+const {fileURLToPath} = urlp;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
