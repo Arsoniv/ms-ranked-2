@@ -13,8 +13,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "minesweeper-lib": "^1.0.3",
-    "minesweeperjs-solver": "^1.0.2",
     "pg": "^8.13.1",
     "pg-pool": "^3.7.0",
     "ws": "^8.18.0"
