@@ -790,7 +790,7 @@ app.listen(PORT, () => {
     console.log(`Api is now running on port: ${PORT}`);
 });
 
-const wss = new WebSocketServer({ port: 8080 });
+const wss = new WebSocketServer({ port: 6000 });
 
 wss.on("connection", async (ws: WebSocket, req: IncomingMessage) => {
     const queryString = req.url?.split("?")[1];

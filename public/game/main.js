@@ -360,7 +360,7 @@ const handleMessage = async (message) => {
 
 const connectToWebsocket = (id) => {
     if (token && queueId) {
-        socket = new WebSocket(`ws://34.135.167.29:8080?queueId=${id}&token=${token}`);
+        socket = new WebSocket(`ws://34.135.167.29:4000?queueId=${id}&token=${token}`);
 
         socket.onopen = () => {
             chInfo('Connected');
