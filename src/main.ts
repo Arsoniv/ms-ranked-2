@@ -3,13 +3,14 @@ import express, {Application, Request, Response} from 'express';
 import {generateBoard} from './boardCreator.js';
 import {truncateBoard} from './truncateBoard.js';
 import {calculateEloChange} from './eloUtils.js';
-import pgp from 'pg';
-const { Pool } = pgp;
 import {IncomingMessage} from 'http';
 import Crypto from 'crypto';
 import cors from 'cors'
 import path from 'path';
 import urlp from 'url';
+import pgp from 'pg';
+const { Pool } = pgp;
+
 const {fileURLToPath} = urlp;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -65,7 +66,7 @@ type Queue = {
 }
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
 });
 
 let currentCustomQueueId: number = 100;
