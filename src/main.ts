@@ -1,10 +1,10 @@
-import dotenv from 'dotenv';
 import {WebSocket, WebSocketServer} from 'ws';
 import express, {Application, Request, Response} from 'express';
 import {generateBoard} from './boardCreator.js';
 import {truncateBoard} from './truncateBoard.js';
 import {calculateEloChange} from './eloUtils.js';
-import {Pool} from 'pg';
+import pgp from 'pg';
+const { Pool } = pgp;
 import {IncomingMessage} from 'http';
 import Crypto from 'crypto';
 import cors from 'cors'
