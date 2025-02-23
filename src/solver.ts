@@ -1,7 +1,7 @@
 export default class MinesweeperSolver {
     private board: number[][];
-    private rows: number;
-    private cols: number;
+    private readonly rows: number;
+    private readonly cols: number;
 
     constructor(board: number[][]) {
         this.board = board;

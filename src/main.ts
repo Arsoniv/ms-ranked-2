@@ -78,7 +78,7 @@ let userTokens: UserAuthToken[] = [];
 let matches: Match[] = [];
 
 const app: Application = express();
-const PORT = 80;
+const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -399,12 +399,12 @@ const handleMessage = async (message: string, id: number) => {
 
     const match = matches.find((match) => {
         if ((match.players.some((user) => user.id === id)&& !match.matchEnded)) return true;
-    });
+    })
 
-    const softMatch = matches.find((match, index) => {
+    const softMatch = matches.find((match) => {
         if (match.players.some((user) => user.id === id)&&match.startTime === matchST&& matchST !== undefined) {
             return true;
-        };
+        }
     });
 
     const matchIndex = matches.findIndex((match) => {
@@ -413,7 +413,7 @@ const handleMessage = async (message: string, id: number) => {
 
     const playerIndex = match?.players.findIndex((user) => user.id === id);
 
-    if (request.type === 3) { // client forfiet
+    if (request.type === 3) { // client forfeit
         if (!match || playerIndex === undefined || match.matchEnded) return;
 
         match.matchEnded = true;
@@ -697,11 +697,7 @@ const checkQueues = ():void => {
 
             setTimeout(() => {
                 const i = matches.findIndex((match) => {
-                    if (match.startTime === newMatchObject.startTime) {
-                        return true;
-                    }else {
-                        return false;
-                    }
+                    return match.startTime === newMatchObject.startTime;
                 })
 
                 if (matches[i]) {
@@ -740,7 +736,7 @@ const handleDisconnect = (id: number): void => {
             }
         })
     })
-    matches.forEach((match, index2) => {
+    matches.forEach((match) => {
         match.players.forEach(async (player, index) => {
             if (player.id === id) {
 

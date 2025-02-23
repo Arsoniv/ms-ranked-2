@@ -62,9 +62,7 @@ export function generateBoard(width: number, height: number, mines: number): Boa
                 board[y][x] = mineCount;
             }
         }
-        let hiddenBoard = board;
-
-        hiddenBoard.forEach((row) => {
+        board.forEach((row) => {
             row.forEach((cell) => {
                 if (cell !== -1){
                     cell = 0;
